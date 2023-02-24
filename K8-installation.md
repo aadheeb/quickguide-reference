@@ -57,5 +57,5 @@ Clone this Repo
 
 - `swapoff --all`
 
-- `kubeadm join 192.168.1.140:6443 --token 3nz4mb.jastxq0hguruiwkp \
-    --discovery-token-ca-cert-hash sha256:2fd4f54dd1e303e5f37e7572e2c8653747980c36dca14ba5d1eb6300f20cca08 --cri-socket=unix:///var/run/cri-dockerd.sock`
+- ```kubeadm join 192.168.1.140:6443 --token 3nz4mb.jastxq0hguruiwkp \
+    --discovery-token-ca-cert-hash sha256:2fd4f54dd1e303e5f37e7572e2c8653747980c36dca14ba5d1eb6300f20cca08 --cri-socket=unix:///var/run/cri-dockerd.sock```
