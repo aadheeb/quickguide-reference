@@ -2,10 +2,10 @@
 
 ```bash
 
-# The script returns a kubeconfig for the service account given
-# you need to have kubectl on PATH with the context set to the cluster you want to create the config for
+The script returns a kubeconfig for the service account given
+you need to have kubectl on PATH with the context set to the cluster you want to create the config for
 
-# Cosmetics for the created config
+Cosmetics for the created config
 clusterName=some-cluster
 # your server address goes here get it via `kubectl cluster-info`
 server=https://157.90.17.72:6443
