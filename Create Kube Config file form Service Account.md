@@ -14,13 +14,13 @@ server=https://157.90.17.72:6443
 ```
 
 the Namespace and ServiceAccount name that is used for the config
-```bash
+```
 namespace=kube-system
 serviceAccount=developer
 ```
 
-######################
-# actual script starts
+actual script starts
+
 set -o errexit
 
 secretName=$(kubectl --namespace $namespace get serviceAccount $serviceAccount -o jsonpath='{.secrets[0].name}')
