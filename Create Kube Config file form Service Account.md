@@ -1,4 +1,4 @@
-<h1 align="center"> Create Kube Config file form Service Account
+<h1 align="center"> Create Kube Config file form Service Account</h1>
 
 The script returns a kubeconfig for the service account given
 you need to have kubectl on PATH with the context set to the cluster you want to create the config for
