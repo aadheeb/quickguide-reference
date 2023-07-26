@@ -1,12 +1,10 @@
 <h1 align="center"> Create Kube Config file form Service Account
 
-```bash
-
 The script returns a kubeconfig for the service account given
 you need to have kubectl on PATH with the context set to the cluster you want to create the config for
 
 Cosmetics for the created config
-clusterName=some-cluster
+`clusterName=some-cluster`
 # your server address goes here get it via `kubectl cluster-info`
 server=https://157.90.17.72:6443
 # the Namespace and ServiceAccount name that is used for the config
@@ -43,4 +41,3 @@ users:
 current-context: ${serviceAccount}@${clusterName}
 "
 
-```
