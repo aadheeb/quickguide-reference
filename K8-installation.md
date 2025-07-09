@@ -1,64 +1,113 @@
-**Kubernetes Installation Commands**
+---
+title: Deploy On-prem Kubernetes Cluster
+parent: DevOps
+---
 
+# Deploy On-prem Kubernetes Cluster
 
-- `sudo apt-get update`
+## Setting up Docker Engine
 
-- `sudo apt-get install -y apt-transport-https ca-certificates curl`
+Update the apt  package index and install packages to allow  apt to use a repository over HTTPS:
 
-- `sudo curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list`
+```bash
+sudo apt-get update
+sudo apt-get install \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+```
 
-- `sudo apt-get update`
+Add Docker’s official GPG key:
 
-- `sudo apt-get install -y kubelet kubeadm kubectl`
+```bash
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+```
 
-- `sudo apt-mark hold kubelet kubeadm kubectl`
-
-**To build for a specific architecture, add ARCH= as an argument, where ARCH is a known build target for golang**
-
-**Install Golang**
-
-Clone this Repo
-	`git clone https://github.com/Mirantis/cri-dockerd.git`
-
-#Run these commands as root
-
-- `wget https://storage.googleapis.com/golang/getgo/installer_linux`
-
-- `chmod +x ./installer_linux`
-
-- `./installer_linux`
-
-- `source ~/.bash_profile`
-
-#Then setup cri-dockerd
-
-- `cd cri-dockerd`
-
-- `mkdir bin`
-
-- `go build -o bin/cri-dockerd`
-
-- `mkdir -p /usr/local/bin`
-
-- `install -o root -g root -m 0755 bin/cri-dockerd /usr/local/bin/cri-dockerd`
-
-- `cp -a packaging/systemd/* /etc/systemd/system`
-
-- `sed -i -e 's,/usr/bin/cri-dockerd,/usr/local/bin/cri-dockerd,' /etc/systemd/system/cri-docker.service`
-
-- `systemctl daemon-reload`
-
-- `systemctl enable cri-docker.service`
-
-- `systemctl enable --now cri-docker.socket`
-
-
-**Kubeadm join command**
-
-- `swapoff --all`
-
-- Join Command:
+# Add the repository to Apt sources:
 
 ```
- kubeadm join 192.168.1.140:6443 --token 3nz4mb.jastxq0hguruiwkp --discovery-token-ca-cert-hash sha256:2fd4f54dd1e303e5f37e7572e2c8653747980c36dca14ba5d1eb6300f20cca08 --cri-socket=unix:///var/run/cri-dockerd.sock
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
 ```
+
+Install Docker Engine, containerd, and Docker Compose.
+
+```bash
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+```
+
+
+## Setup Kubernetes binaries
+
+```bash
+sudo curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+```
+
+
+## Setup cri-dockerd
+
+```bash
+git clone https://github.com/Mirantis/cri-dockerd.git
+
+# Run these commands as root
+###Install GO###
+wget https://go.dev/dl/go1.23.5.linux-amd64.tar.gz
+tar -C /usr/local -xzf go1.23.5.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+go version
+
+cd cri-dockerd
+mkdir bin
+go build -o bin/cri-dockerd
+mkdir -p /usr/local/bin
+install -o root -g root -m 0755 bin/cri-dockerd /usr/local/bin/cri-dockerd
+cp -a packaging/systemd/* /etc/systemd/system
+sed -i -e 's,/usr/bin/cri-dockerd,/usr/local/bin/cri-dockerd,' /etc/systemd/system/cri-docker.service
+systemctl daemon-reload
+systemctl enable cri-docker.service
+systemctl enable --now cri-docker.socket
+```
+
+
+## Deploy Cluster
+
+### Initialize Control Plane
+
+```bash
+swapoff --all
+sudo kubeadm init --pod-network-cidr=<pod-cidr> --apiserver-cert-extra-sans=<ip/host-to-connect-api> --cri-socket=unix:///var/run/cri-dockerd.sock
+```
+
+for Weave CNI use `10.32.0.0/12` as `--pod-network-cidr`
+
+Follow on screen instructions to setup kubeconfig in master machine, store kube join command for later use to join nodes to the cluster
+
+#### Deploy Weave CNI
+
+```bash
+kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+```
+
+### Join Nodes
+
+```bash
+swapoff --all
+kubeadm join <control-plane-> --token <token> \
+    --discovery-token-ca-cert-hash <discovery-token-hash> --cri-socket=unix:///var/run/cri-dockerd.sock
+```
+
